@@ -9,7 +9,9 @@ export default function RajhansHotel() {
   
   const [currentPage, setCurrentPage] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [rating, setRating] = useState(0);
   
+
 
  // landing, login, menu, cart, confirmation, status, payment, receipt
   const [tableNumber, setTableNumber] = useState('');
@@ -867,14 +869,18 @@ if (currentPage === 'adminPage') {
 
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700 rounded-xl p-6 text-center">
             <h3 className="font-bold mb-3">Rate Your Experience</h3>
-            <div className="flex justify-center gap-2 mb-4">
-              {[1, 2, 3, 4, 5].map(star => (
-                <Star 
-                  key={star}
-                  className="w-8 h-8 text-amber-400 cursor-pointer hover:fill-amber-400 transition"
-                />
-              ))}
-            </div>
+           <div className="flex justify-center gap-2 mb-4">
+  {[1, 2, 3, 4, 5].map(num => (
+    <Star
+      key={num}
+      onClick={() => setRating(num)}
+      className={`w-8 h-8 cursor-pointer ${
+        num <= rating ? "text-amber-400 fill-amber-400" : "text-gray-500"
+      }`}
+    />
+  ))}
+</div>
+
             <textarea 
               placeholder="Share your feedback..."
               rows={3}
