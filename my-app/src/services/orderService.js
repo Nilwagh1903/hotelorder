@@ -11,7 +11,6 @@ export const placeOrder = async (customerName, phone, table, items, total) => {
       items,
       total,
       status: "recived",       // kitchen workflow
-      paymentStatus: false, // payment pending
       billPaid: false,          // default
       createdAt: serverTimestamp()
     }
