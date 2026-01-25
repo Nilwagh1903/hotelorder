@@ -1,4 +1,4 @@
-import { db } from "../firebase";
+import { db } from "../config/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export const placeOrder = async (phone, table, items, total) => {
@@ -12,11 +12,6 @@ export const placeOrder = async (phone, table, items, total) => {
     createdAt: serverTimestamp()
   };
 
-  // Save order for user history
-  await addDoc(collection(db, "users", phone, "orders"), orderData);
-
-  // Mirror order into kitchenOrders for display
   await addDoc(collection(db, "kitchenOrders"), orderData);
-
   return true;
 };
