@@ -9,10 +9,10 @@ export const placeOrder = async (customerName, phone, table, items, total) => {
       phone,
       table,
       items,
-      total,
-      status: "received",       // kitchen workflow
-      paymentStatus: "pending", // payment pending
-      billPaid: false,          // default
+      total: Number(total) || 0,   // <-- FIXED HERE
+      status: "received",
+      paymentStatus: "pending",
+      billPaid: false,
       createdAt: serverTimestamp()
     }
   );
