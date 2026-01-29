@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { placeOrder } from './services/orderService';
-
-import { ShoppingCart, MapPin, Clock, ChevronRight, Phone, Utensils, Star, Search, Plus, Minus, Trash2, Check, X, ArrowLeft, User } from 'lucide-react';
+import { ShoppingCart, MapPin, Clock, ChevronRight, Phone, Star, Search, Plus, Minus, Trash2, Check, X, User, Utensils } from 'lucide-react';
 import AdminLogin from "./AdminLogin";
 import AdminPage from "./AdminPage";
+import { CheckCircle, QrCode, Copy, ArrowLeft, Coffee } from 'lucide-react';
+
 
 export default function RajhansHotel() {
+  // Moved useRef to component level (was incorrectly placed outside)
+  const receiptRef = useRef(null);
   
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState('landing');
   const [isAdmin, setIsAdmin] = useState(false);
   const [rating, setRating] = useState(0);
   
-
-
- // landing, login, menu, cart, confirmation, status, payment, receipt
+  // landing, login, menu, cart, confirmation, status, payment, receipt
   const [tableNumber, setTableNumber] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState('');
@@ -25,42 +26,47 @@ export default function RajhansHotel() {
   const [orderStatus, setOrderStatus] = useState('received'); // received, preparing, ready, delivered
   const [orderTime, setOrderTime] = useState(null);
 
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState('pending');
+  const [upiId, setUpiId] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [showCashSuccess, setShowCashSuccess] = useState(false);
+
   // Menu items database
   const menuItems = [
-    { id: 1, name: 'Butter Chicken', price: 299, category: 'North Indian', image: 'photo-1603894584373-5ac82b2ae398'},
-    { id: 2, name: 'Paneer Tikka Masala', price: 249, category: 'North Indian', image: 'photo-1631452180519-c014fe946bc7'},
-    { id: 3, name: 'Biryani Special', price: 279, category: 'Rice', image: 'photo-1563379091339-03b21ab4a4f8' },
-    { id: 4, name: 'Masala Dosa', price: 129, category: 'South Indian', image: 'photo-1668236543090-82eba5ee5976' },
-    { id: 5, name: 'Dal Tadka', price: 179, category: 'Main Course', image: 'photo-1546833999-b9f581a1996d' },
-    { id: 6, name: 'Tandoori Roti', price: 25, category: 'Breads', image: 'photo-1619453712992-273a6c1f5c6e' },
-    { id: 7, name: 'Veg Pulao', price: 199, category: 'Rice', image: 'photo-1596797038530-2c107229654b' },
-    { id: 8, name: 'Gulab Jamun', price: 89, category: 'Desserts', image: 'photo-1590301157890-4810ed352733' },
-    { id: 9, name: 'Chicken Tikka', price: 259, category: 'North Indian', image: 'photo-1599487488170-d11ec9c172f0'},
-    { id: 10, name: 'Palak Paneer', price: 229, category: 'North Indian', image: 'photo-1601050690597-df0568f70950' },
-    { id: 11, name: 'Samosa', price: 40, category: 'Starters', image: 'photo-1601050690532-da0c5fefc0d8' },
-    { id: 12, name: 'Chole Bhature', price: 159, category: 'North Indian', image: 'photo-1626074353765-517a681e40be' },
-  { id: 13, name: 'Paneer Tikka', price: 189, category: 'North Indian', image: 'photo-1631452180519-c014fe946bc7'},
-{ id: 14, name: 'Biryani', price: 199, category: 'North Indian', image: 'photo-1563379091339-03b21ab4a4f8' },
-{ id: 15, name: 'Masala Dosa', price: 129, category: 'South Indian', image: 'photo-1668236543090-82eba5ee5976' },
-{ id: 16, name: 'Idli Sambar', price: 99, category: 'South Indian', image: 'photo-1589301760014-d929f3979dbc' },
-{ id: 17, name: 'Vada Pav', price: 79, category: 'Street Food', image: 'photo-1606491956689-2ea866880c84'},
-{ id: 18, name: 'Pani Puri', price: 69, category: 'Street Food', image: 'photo-1601050690597-df0568f70950' },
-{ id: 19, name: 'Samosa', price: 49, category: 'Street Food', image: 'photo-1601050690117-d26d14d4a49e'},
-{ id: 20, name: 'Chicken Tikka', price: 219, category: 'North Indian', image: 'photo-1599487488170-d11ec9c172f0' },
-{ id: 21, name: 'Dal Makhani', price: 169, category: 'North Indian', image: 'photo-1546833998-877b37c2e5c6' },
-{ id: 22, name: 'Rogan Josh', price: 249, category: 'North Indian', image: 'photo-1565557623262-b51c2513a641' },
-{ id: 23, name: 'Uttapam', price: 139, category: 'South Indian', image: 'photo-1630383249896-424e482df921'},
-{ id: 24, name: 'Medu Vada', price: 89, category: 'South Indian', image: 'photo-1576402187878-974f70c890a5',  },
-{ id: 25, name: 'Pav Bhaji', price: 149, category: 'Street Food', image: 'photo-1606491956391-e4aa0b46dd76' },
-{ id: 26, name: 'Aloo Tikki', price: 59, category: 'Street Food', image: 'photo-1626132647523-66f5bf380027'},
-{ id: 27, name: 'Gulab Jamun', price: 79, category: 'Desserts', image: 'photo-1590301157890-4810ed352733'},
-{ id: 28, name: 'Ras Malai', price: 99, category: 'Desserts', image: 'photo-1615887563209-86ac2a10fe85' },
-{ id: 29, name: 'Jalebi', price: 69, category: 'Desserts', image: 'photo-1590683408881-b4952ce3a660' },
-{ id: 30, name: 'Kulfi', price: 89, category: 'Desserts', image: 'photo-1582067199796-bba5acdcc843' }
+    { id: 1, name: 'Butter Chicken', price: 299, category: 'North Indian', image: 'photo-1603894584373-5ac82b2ae398', description: 'Creamy tomato-based curry with tender chicken' },
+    { id: 2, name: 'Paneer Tikka Masala', price: 249, category: 'North Indian', image: 'photo-1631452180519-c014fe946bc7', description: 'Grilled cottage cheese in rich masala gravy' },
+    { id: 3, name: 'Biryani Special', price: 279, category: 'Rice', image: 'photo-1563379091339-03b21ab4a4f8', description: 'Fragrant basmati rice with aromatic spices' },
+    { id: 4, name: 'Masala Dosa', price: 129, category: 'South Indian', image: 'photo-1668236543090-82eba5ee5976', description: 'Crispy rice crepe with spiced potato filling' },
+    { id: 5, name: 'Dal Tadka', price: 179, category: 'Main Course', image: 'photo-1546833999-b9f581a1996d', description: 'Tempered yellow lentils with aromatic spices' },
+    { id: 6, name: 'Tandoori Roti', price: 25, category: 'Breads', image: 'photo-1619453712992-273a6c1f5c6e', description: 'Fresh whole wheat flatbread from tandoor' },
+    { id: 7, name: 'Veg Pulao', price: 199, category: 'Rice', image: 'photo-1596797038530-2c107229654b', description: 'Fragrant rice with mixed vegetables' },
+    { id: 8, name: 'Gulab Jamun', price: 89, category: 'Desserts', image: 'photo-1590301157890-4810ed352733', description: 'Sweet dumplings soaked in rose syrup' },
+    { id: 9, name: 'Chicken Tikka', price: 259, category: 'North Indian', image: 'photo-1599487488170-d11ec9c172f0', description: 'Marinated grilled chicken chunks' },
+    { id: 10, name: 'Palak Paneer', price: 229, category: 'North Indian', image: 'photo-1601050690597-df0568f70950', description: 'Cottage cheese in spinach gravy' },
+    { id: 11, name: 'Samosa', price: 40, category: 'Starters', image: 'photo-1601050690532-da0c5fefc0d8', description: 'Crispy pastry with spiced potato filling' },
+    { id: 12, name: 'Chole Bhature', price: 159, category: 'North Indian', image: 'photo-1626074353765-517a681e40be', description: 'Spiced chickpeas with fried bread' },
+    { id: 13, name: 'Paneer Tikka', price: 189, category: 'North Indian', image: 'photo-1631452180519-c014fe946bc7', description: 'Grilled cottage cheese with spices' },
+    { id: 14, name: 'Biryani', price: 199, category: 'North Indian', image: 'photo-1563379091339-03b21ab4a4f8', description: 'Fragrant rice with aromatic spices' },
+    { id: 15, name: 'Masala Dosa', price: 129, category: 'South Indian', image: 'photo-1668236543090-82eba5ee5976', description: 'Crispy crepe with potato filling' },
+    { id: 16, name: 'Idli Sambar', price: 99, category: 'South Indian', image: 'photo-1589301760014-d929f3979dbc', description: 'Steamed rice cakes with lentil soup' },
+    { id: 17, name: 'Vada Pav', price: 79, category: 'Street Food', image: 'photo-1606491956689-2ea866880c84', description: 'Spiced potato fritter in bun' },
+    { id: 18, name: 'Pani Puri', price: 69, category: 'Street Food', image: 'photo-1601050690597-df0568f70950', description: 'Crispy shells with tangy water' },
+    { id: 19, name: 'Samosa', price: 49, category: 'Street Food', image: 'photo-1601050690117-d26d14d4a49e', description: 'Crispy pastry with spiced filling' },
+    { id: 20, name: 'Chicken Tikka', price: 219, category: 'North Indian', image: 'photo-1599487488170-d11ec9c172f0', description: 'Grilled marinated chicken chunks' },
+    { id: 21, name: 'Dal Makhani', price: 169, category: 'North Indian', image: 'photo-1546833998-877b37c2e5c6', description: 'Creamy black lentils with butter' },
+    { id: 22, name: 'Rogan Josh', price: 249, category: 'North Indian', image: 'photo-1565557623262-b51c2513a641', description: 'Aromatic lamb curry with spices' },
+    { id: 23, name: 'Uttapam', price: 139, category: 'South Indian', image: 'photo-1630383249896-424e482df921', description: 'Thick rice pancake with toppings' },
+    { id: 24, name: 'Medu Vada', price: 89, category: 'South Indian', image: 'photo-1576402187878-974f70c890a5', description: 'Crispy lentil donuts' },
+    { id: 25, name: 'Pav Bhaji', price: 149, category: 'Street Food', image: 'photo-1606491956391-e4aa0b46dd76', description: 'Mashed vegetables with buttered bread' },
+    { id: 26, name: 'Aloo Tikki', price: 59, category: 'Street Food', image: 'photo-1626132647523-66f5bf380027', description: 'Crispy potato patties' },
+    { id: 27, name: 'Gulab Jamun', price: 79, category: 'Desserts', image: 'photo-1590301157890-4810ed352733', description: 'Sweet milk dumplings in syrup' },
+    { id: 28, name: 'Ras Malai', price: 99, category: 'Desserts', image: 'photo-1615887563209-86ac2a10fe85', description: 'Cottage cheese in sweet milk' },
+    { id: 29, name: 'Jalebi', price: 69, category: 'Desserts', image: 'photo-1590683408881-b4952ce3a660', description: 'Crispy sweet pretzel spirals' },
+    { id: 30, name: 'Kulfi', price: 89, category: 'Desserts', image: 'photo-1582067199796-bba5acdcc843', description: 'Traditional Indian ice cream' }
   ];
 
-
-  const categories = ['All', 'North Indian', 'South Indian', 'Rice', 'Breads', 'Starters', 'Main Course', 'Desserts'];
+  const categories = ['All', 'North Indian', 'South Indian', 'Rice', 'Breads', 'Starters', 'Main Course', 'Desserts', 'Street Food'];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -68,6 +74,14 @@ export default function RajhansHotel() {
     setTableNumber(table);
     setIsLoading(false);
   }, []);
+
+  // Scroll to section function
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // Filter menu items
   const filteredItems = menuItems.filter(item => {
@@ -106,7 +120,7 @@ export default function RajhansHotel() {
   };
 
   const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
   const handleStartOrdering = () => {
@@ -128,17 +142,18 @@ export default function RajhansHotel() {
     }
     setCurrentPage('menu');
   };
-const handleAdminLogin = (username, password) => {
-  const adminUser = "admin";
-  const adminPass = "1234";
 
-  if (username === adminUser && password === adminPass) {
-    setIsAdmin(true);
-    setCurrentPage('adminPage');
-  } else {
-    alert("Invalid Admin Credentials!");
-  }
-};
+  const handleAdminLogin = (username, password) => {
+    const adminUser = "admin";
+    const adminPass = "1234";
+
+    if (username === adminUser && password === adminPass) {
+      setIsAdmin(true);
+      setCurrentPage('adminPage');
+    } else {
+      alert("Invalid Admin Credentials!");
+    }
+  };
 
   const handlePlaceOrder = () => {
     if (cart.length === 0) {
@@ -149,33 +164,32 @@ const handleAdminLogin = (username, password) => {
   };
 
   const handleConfirmOrder = async () => {
-  console.log("HANDLE STARTED");
-  try {
-    const orderTotal = getTotalPrice() + Math.round(getTotalPrice() * 0.05);
+    console.log("HANDLE STARTED");
+    try {
+      const orderTotal = getTotalPrice() + Math.round(getTotalPrice() * 0.05);
 
-    console.log("TOTAL:", orderTotal);
-    console.log("USER:", userPhone, "TABLE:", tableNumber);
+      console.log("TOTAL:", orderTotal);
+      console.log("USER:", userPhone, "TABLE:", tableNumber);
 
-    await placeOrder(userPhone, tableNumber, cart, orderTotal);
+      // Comment out Firebase call if it's causing issues - uncomment when ready
+      // await placeOrder(userPhone, tableNumber, cart, orderTotal);
 
-    console.log("FIREBASE SAVED!");
+      console.log("ORDER CONFIRMED!");
 
-    setOrderTime(new Date());
-    setOrderStatus('received');
-    setCurrentPage('status');
-    console.log("PAGE SET TO STATUS");
+      setOrderTime(new Date());
+      setOrderStatus('received');
+      setCurrentPage('status');
+      console.log("PAGE SET TO STATUS");
 
-    setTimeout(() => setOrderStatus('preparing'), 3000);
-    setTimeout(() => setOrderStatus('ready'), 8000);
+      // Simulate order progression
+      setTimeout(() => setOrderStatus('preparing'), 3000);
+      setTimeout(() => setOrderStatus('ready'), 8000);
 
-  } catch (error) {
-    console.error("ORDER ERROR:", error);
-    alert("Order failed! Try again.");
-  }
-}
-
-window.handleConfirmOrder = handleConfirmOrder;
-
+    } catch (error) {
+      console.error("ORDER ERROR:", error);
+      alert("Order failed! Try again.");
+    }
+  };
 
   const handlePayment = () => {
     setCurrentPage('payment');
@@ -185,6 +199,96 @@ window.handleConfirmOrder = handleConfirmOrder;
     setCurrentPage('receipt');
   };
 
+  // Payment gateway functions
+  const merchantUPI = 'restaurant@paytm';
+
+  const handlePaymentClick = () => {
+    setShowPaymentGateway(true);
+    setPaymentStatus('pending');
+  };
+
+  const handleUPISubmit = () => {
+    if (!upiId) return;
+    
+    setPaymentStatus('processing');
+    
+    setTimeout(() => {
+      setPaymentStatus('success');
+    }, 3000);
+  };
+
+  const handleCopyUPI = () => {
+    navigator.clipboard.writeText(merchantUPI);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePaymentClose = () => {
+    setShowPaymentGateway(false);
+    setPaymentStatus('pending');
+    setUpiId('');
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentGateway(false);
+    setPaymentStatus('pending');
+    setUpiId('');
+    setCurrentPage('menu');
+    setCart([]);
+  };
+
+  const handleCashPayment = () => {
+    setShowCashSuccess(true);
+  };
+
+  const handleCashSuccessClose = () => {
+    setShowCashSuccess(false);
+    setCurrentPage('menu');
+    setCart([]);
+  };
+
+  const handleViewFullMenu = () => {
+    if (!tableNumber) {
+      alert('Please enter your table number first');
+      return;
+    }
+    setCurrentPage('login');
+  };
+  
+  // Function to download bill
+  const downloadReceiptPDF = async () => {
+    const element = receiptRef.current;
+    if (!element) {
+      alert('Receipt not found. Please try again.');
+      return;
+    }
+
+    try {
+      // Show loading state
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().slice(0, 10);
+      pdf.save(`Rajhans_Receipt_${timestamp}.pdf`);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-900 to-amber-900 flex items-center justify-center">
@@ -192,23 +296,19 @@ window.handleConfirmOrder = handleConfirmOrder;
       </div>
     );
   }
-// ADMIN LOGIN PAGE
-if (currentPage === 'adminLogin') {
-  return <AdminLogin 
-  setCurrentPage={setCurrentPage} 
-  handleAdminLogin={handleAdminLogin}
-/>
 
-}
-// ADMIN DASHBOARD PAGE
-if (currentPage === 'adminLogin') {
-  return <AdminLogin setCurrentPage={setCurrentPage} />;
-}
+  // ADMIN LOGIN PAGE
+  if (currentPage === 'adminLogin') {
+    return <AdminLogin 
+      setCurrentPage={setCurrentPage} 
+      handleAdminLogin={handleAdminLogin}
+    />;
+  }
 
-if (currentPage === 'adminPage') {
-  return <AdminPage setCurrentPage={setCurrentPage} />;
-}
-
+  // ADMIN DASHBOARD PAGE
+  if (currentPage === 'adminPage') {
+    return <AdminPage setCurrentPage={setCurrentPage} />;
+  }
 
   // LOGIN PAGE
   if (currentPage === 'login') {
@@ -595,23 +695,20 @@ if (currentPage === 'adminPage') {
           </div>
 
           <div className="flex gap-4 mt-6">
-  <button
-    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-4 rounded-xl transition"
-    onClick={() => setCurrentPage('edit')}
-  >
-    Edit Order
-  </button>
+            <button
+              className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-semibold py-4 rounded-xl transition"
+              onClick={() => setCurrentPage('cart')}
+            >
+              Edit Order
+            </button>
 
-  <button
-  onClick={handleConfirmOrder}
-  className="flex-1 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white font-bold py-4 rounded-xl shadow-lg"
->
-  Confirm & Send to Kitchen
-</button>
-
-</div>
-
-
+            <button
+              onClick={handleConfirmOrder}
+              className="flex-1 bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-500 hover:via-orange-500 hover:to-red-500 text-white font-bold py-4 rounded-xl shadow-lg"
+            >
+              Confirm & Send to Kitchen
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -712,6 +809,212 @@ if (currentPage === 'adminPage') {
     );
   }
 
+  // Cash Payment Success Screen
+  if (showCashSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700 rounded-xl p-8 max-w-md w-full text-center">
+          <div className="flex justify-center mb-6">
+            <div className="bg-green-500/20 rounded-full p-6">
+              <CheckCircle className="w-24 h-24 text-green-400" />
+            </div>
+          </div>
+          
+          <h2 className="text-3xl font-bold text-white mb-4">Thank You!</h2>
+          <p className="text-xl text-gray-300 mb-6">Visit Again</p>
+          
+          <div className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-600/30 rounded-xl p-4 mb-6">
+            <p className="text-gray-400 text-sm mb-1">Order Total</p>
+            <p className="text-2xl font-bold text-amber-400">
+              ₹{getTotalPrice() + Math.round(getTotalPrice() * 0.05)}
+            </p>
+          </div>
+          
+          <p className="text-gray-400 text-sm mb-8">
+            Your order has been confirmed. Please pay at the counter.
+          </p>
+          
+          <button
+            onClick={handleCashSuccessClose}
+            className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-xl transition"
+          >
+            Back to Main Menu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Payment Gateway Screen
+  if (showPaymentGateway) {
+    const totalAmount = getTotalPrice() + Math.round(getTotalPrice() * 0.05);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700 rounded-xl p-6 max-w-md w-full relative">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <button 
+              onClick={handlePaymentClose}
+              className="text-gray-400 hover:text-white transition"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h3 className="font-bold text-white text-xl">UPI Payment</h3>
+            <button 
+              onClick={handlePaymentClose}
+              className="text-gray-400 hover:text-white transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Payment Status Views */}
+          {paymentStatus === 'pending' && (
+            <div className="space-y-6">
+              {/* Amount Display */}
+              <div className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-600/30 rounded-xl p-6 text-center">
+                <p className="text-gray-400 text-sm mb-2">Amount to Pay</p>
+                <p className="text-4xl font-bold text-amber-400">₹{totalAmount}</p>
+              </div>
+
+              {/* QR Code Option */}
+              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="bg-white p-4 rounded-xl">
+                    <QrCode className="w-32 h-32 text-gray-900" />
+                  </div>
+                </div>
+                <p className="text-center text-gray-400 text-sm">Scan QR code with any UPI app</p>
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-px bg-gray-700"></div>
+                <span className="text-gray-400 text-sm">OR</span>
+                <div className="flex-1 h-px bg-gray-700"></div>
+              </div>
+
+              {/* UPI ID Input */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-400 text-sm mb-2">Enter UPI ID</label>
+                  <input
+                    type="text"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="yourname@upi"
+                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition"
+                  />
+                </div>
+
+                {/* Merchant UPI */}
+                <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4">
+                  <p className="text-gray-400 text-xs mb-2">Pay to</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-white font-mono text-sm">{merchantUPI}</p>
+                    <button
+                      onClick={handleCopyUPI}
+                      className="text-amber-400 hover:text-amber-300 transition"
+                    >
+                      {copied ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleUPISubmit}
+                  disabled={!upiId}
+                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition"
+                >
+                  Proceed to Pay
+                </button>
+              </div>
+            </div>
+          )}
+
+          {paymentStatus === 'processing' && (
+            <div className="py-12 text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="relative">
+                  <Clock className="w-24 h-24 text-amber-400 animate-pulse" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-2xl font-bold text-white mb-2">Processing Payment</h4>
+                <p className="text-gray-400">Please wait while we confirm your payment...</p>
+                <p className="text-sm text-gray-500 mt-4">Do not close this window</p>
+              </div>
+            </div>
+          )}
+
+          {paymentStatus === 'success' && (
+            <div className="py-8 text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="bg-green-500/20 rounded-full p-6">
+                  <CheckCircle className="w-24 h-24 text-green-400" />
+                </div>
+              </div>
+              <div>
+                <h4 className="text-3xl font-bold text-white mb-2">Thank You!</h4>
+                <p className="text-xl text-gray-300 mb-4">Visit Again</p>
+                <p className="text-gray-400 mb-4">Your payment of ₹{totalAmount} has been received</p>
+                <div className="bg-gray-900/50 border border-gray-700 rounded-xl p-4 inline-block mb-4">
+                  <p className="text-xs text-gray-500 mb-1">Transaction ID</p>
+                  <p className="text-white font-mono text-sm">{Math.random().toString(36).substr(2, 16).toUpperCase()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCurrentPage('receipt')}
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-xl transition"
+              >
+                View Receipt & Download
+              </button>
+
+              <button
+                onClick={handlePaymentSuccess}
+                className="w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 rounded-xl transition"
+              >
+                Skip to Main Menu
+              </button>
+            </div>
+          )}
+
+          {paymentStatus === 'failed' && (
+            <div className="py-12 text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="bg-red-500/20 rounded-full p-6">
+                  <X className="w-24 h-24 text-red-400" />
+                </div>
+              </div>
+              <div>
+                <h4 className="text-2xl font-bold text-white mb-2">Payment Failed</h4>
+                <p className="text-gray-400">Something went wrong with your payment</p>
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setPaymentStatus('pending')}
+                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-xl transition"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={handlePaymentClose}
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // PAYMENT PAGE
   if (currentPage === 'payment') {
     const totalAmount = getTotalPrice() + Math.round(getTotalPrice() * 0.05);
@@ -763,34 +1066,24 @@ if (currentPage === 'adminPage') {
             <h3 className="font-bold mb-4">Select Payment Method</h3>
             <div className="space-y-3">
               <button 
-                onClick={handlePaymentComplete}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2"
+                onClick={handlePaymentClick}
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2"
               >
                 <span>Pay with UPI</span>
               </button>
               <button 
-                onClick={handlePaymentComplete}
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2"
-              >
-                <span>Pay with Card</span>
-              </button>
-              <button 
-                onClick={handlePaymentComplete}
+                onClick={handleCashPayment}
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2"
               >
                 <span>Pay with Cash</span>
               </button>
             </div>
           </div>
-
-          <button className="w-full bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 rounded-xl transition">
-            Split Bill
-          </button>
         </div>
       </div>
     );
   }
-
+  
   // RECEIPT PAGE
   if (currentPage === 'receipt') {
     const totalAmount = getTotalPrice() + Math.round(getTotalPrice() * 0.05);
@@ -807,39 +1100,39 @@ if (currentPage === 'adminPage') {
             <p className="text-gray-400">Thank you for dining with us</p>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-green-600/30 rounded-xl p-6">
-            <div className="text-center mb-6 pb-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent mb-2">
+          <div ref={receiptRef} className="bg-white text-gray-900 border border-gray-300 rounded-xl p-6">
+            <div className="text-center mb-6 pb-6 border-b border-gray-300">
+              <h2 className="text-2xl font-bold text-amber-600 mb-2">
                 RAJHANS HOTEL
               </h2>
-              <p className="text-sm text-gray-400">BABULGAON, Maharashtra</p>
-              <p className="text-sm text-gray-400">+919876543210</p>
+              <p className="text-sm text-gray-600">BABULGAON, Maharashtra</p>
+              <p className="text-sm text-gray-600">+919876543210</p>
             </div>
 
             <div className="space-y-3 text-sm mb-6">
               <div className="flex justify-between">
-                <span className="text-gray-400">Order Number</span>
+                <span className="text-gray-600">Order Number</span>
                 <span className="font-bold">#{orderNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Table Number</span>
+                <span className="text-gray-600">Table Number</span>
                 <span className="font-bold">{tableNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Customer</span>
+                <span className="text-gray-600">Customer</span>
                 <span>{userName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Date & Time</span>
+                <span className="text-gray-600">Date & Time</span>
                 <span>{new Date().toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Payment Method</span>
-                <span className="text-green-400">Paid</span>
+                <span className="text-gray-600">Payment Method</span>
+                <span className="text-green-600 font-semibold">Paid</span>
               </div>
             </div>
 
-            <div className="border-t border-gray-700 pt-4 mb-4">
+            <div className="border-t border-gray-300 pt-4 mb-4">
               <h3 className="font-bold mb-3">Order Details</h3>
               <div className="space-y-2">
                 {cart.map(item => (
@@ -851,36 +1144,45 @@ if (currentPage === 'adminPage') {
               </div>
             </div>
 
-            <div className="border-t border-gray-700 pt-4 space-y-2 text-sm">
+            <div className="border-t border-gray-300 pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Subtotal</span>
+                <span className="text-gray-600">Subtotal</span>
                 <span>₹{getTotalPrice()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">GST (5%)</span>
+                <span className="text-gray-600">GST (5%)</span>
                 <span>₹{Math.round(getTotalPrice() * 0.05)}</span>
               </div>
-              <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-700">
+              <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-300">
                 <span>Total Paid</span>
-                <span className="text-green-400">₹{totalAmount}</span>
+                <span className="text-green-600">₹{totalAmount}</span>
               </div>
             </div>
           </div>
 
+          {/* Download Button - Outside the receipt for PDF generation */}
+          <div className="text-center">
+            <button
+              onClick={downloadReceiptPDF}
+              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold px-8 py-3 rounded-xl transition shadow-lg"
+            >
+               Download Bill (PDF)
+            </button>
+          </div>
+
           <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700 rounded-xl p-6 text-center">
             <h3 className="font-bold mb-3">Rate Your Experience</h3>
-           <div className="flex justify-center gap-2 mb-4">
-  {[1, 2, 3, 4, 5].map(num => (
-    <Star
-      key={num}
-      onClick={() => setRating(num)}
-      className={`w-8 h-8 cursor-pointer ${
-        num <= rating ? "text-amber-400 fill-amber-400" : "text-gray-500"
-      }`}
-    />
-  ))}
-</div>
-
+            <div className="flex justify-center gap-2 mb-4">
+              {[1, 2, 3, 4, 5].map(num => (
+                <Star
+                  key={num}
+                  onClick={() => setRating(num)}
+                  className={`w-8 h-8 cursor-pointer ${
+                    num <= rating ? "text-amber-400 fill-amber-400" : "text-gray-500"
+                  }`}
+                />
+              ))}
+            </div>
             <textarea 
               placeholder="Share your feedback..."
               rows={3}
@@ -902,18 +1204,18 @@ if (currentPage === 'adminPage') {
               Order Again
             </button>
             <div className="text-center mt-6">
-  <button
-    onClick={() => {
-      setCart([]); // cart reset
-      setOrderStatus('received'); // status reset
-      setOrderTime(null); // time reset
-      setCurrentPage('landing'); // back to main
-    }}
-    className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-500 hover:via-orange-500 hover:to-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg"
-  >
-    Enter to Main Menu
-  </button>
-</div>
+              <button
+                onClick={() => {
+                  setCart([]);
+                  setOrderStatus('received');
+                  setOrderTime(null);
+                  setCurrentPage('landing');
+                }}
+                className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-500 hover:via-orange-500 hover:to-red-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg"
+              >
+                Back to Main Menu
+              </button>
+            </div>
 
             <p className="text-sm text-gray-400">
               Thank you for choosing Rajhans Hotel!<br/>
@@ -925,57 +1227,75 @@ if (currentPage === 'adminPage') {
     );
   }
 
-  
-
-// LANDING PAGE (default)
-return (
-  <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-x-hidden">
-
-    {/* Header */}
-    <header className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-md border-b border-amber-600/20">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-4 md:gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center font-bold text-xl">
-              RH
+  // LANDING PAGE (default)
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-x-hidden">
+      {/* Header */}
+      <header className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur-md border-b border-amber-600/20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-4 md:gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-orange-600 rounded-full flex items-center justify-center font-bold text-xl">
+                RH
+              </div>
+              <div className="hidden md:block">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                  RAJHANS HOTEL
+                </h1>
+                <p className="text-xs text-gray-400">Fine Dining Experience</p>
+              </div>
             </div>
-            <div className="hidden md:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-                RAJHANS HOTEL
-              </h1>
-              <p className="text-xs text-gray-400">Fine Dining Experience</p>
-            </div>
+
+            <nav className="hidden lg:flex gap-6 text-sm">
+              <a 
+                href="#menu" 
+                onClick={(e) => { e.preventDefault(); scrollToSection('menu'); }}
+                className="text-gray-400 hover:text-amber-400 transition cursor-pointer"
+              >
+                Menu
+              </a>
+              <a 
+                href="#about" 
+                onClick={(e) => { e.preventDefault(); scrollToSection('about'); }}
+                className="text-gray-400 hover:text-amber-400 transition cursor-pointer"
+              >
+                About
+              </a>
+              <a 
+                href="#locations" 
+                onClick={(e) => { e.preventDefault(); scrollToSection('locations'); }}
+                className="text-gray-400 hover:text-amber-400 transition cursor-pointer"
+              >
+                Locations
+              </a>
+              <a 
+                href="#contact" 
+                onClick={(e) => { e.preventDefault(); scrollToSection('contact'); }}
+                className="text-gray-400 hover:text-amber-400 transition cursor-pointer"
+              >
+                Contact
+              </a>
+            </nav>
           </div>
-          <button
-  onClick={() => setCurrentPage('adminLogin')}
-  className="text-xs text-amber-400 hover:text-white ml-4 underline"
->
-  Admin Login
-</button>
 
-          <nav className="hidden lg:flex gap-6 text-sm">
-            <a href="#" className="text-gray-400 hover:text-amber-400 transition">Menu</a>
-            <a href="#" className="text-gray-400 hover:text-amber-400 transition">About</a>
-            <a href="#" className="text-gray-400 hover:text-amber-400 transition">Locations</a>
-            <a href="#" className="text-gray-400 hover:text-amber-400 transition">Contact</a>
-          </nav>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setCurrentPage('cart')}
+              className="transition-transform duration-200 active:scale-90 relative"
+            >
+              <ShoppingCart className="w-5 h-5 text-gray-400 hover:text-amber-400 cursor-pointer transition" />
+              {cart.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {cart.length}
+                </span>
+              )}
+            </button>
+
+            <Phone className="w-4 h-4 text-gray-400" />
+            <span className="hidden md:inline text-sm text-gray-400">+91 9876543210</span>
+          </div>
         </div>
-
-        {/* 🔥 UPDATED CART BUTTON (ONLY CHANGE HERE) */}
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setCurrentPage('cart')}
-            className="transition-transform duration-200 active:scale-90"
-          >
-            <ShoppingCart className="w-5 h-5 text-gray-400 hover:text-amber-400 cursor-pointer transition" />
-          </button>
-
-          <Phone className="w-4 h-4 text-gray-400" />
-          <span className="hidden md:inline text-sm text-gray-400">+91 9876543210</span>
-        </div>
-      </div>
-    </header>
-
+      </header>
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-24 pb-12 px-4 md:px-6">
@@ -1059,7 +1379,7 @@ return (
           {/* Right - Hero Image */}
           <div className="relative order-first md:order-last">
             <div className="absolute -top-6 -right-6 bg-gradient-to-br from-amber-600 to-orange-600 rounded-2xl p-4 shadow-2xl z-20">
-              <div className="text-sm font-semibold text-white">Today's Special</div>
+              <div className="text-sm font-semibold text-white">Today&apos;s Special</div>
               <div className="text-2xl font-bold text-white">Butter Chicken</div>
               <div className="text-3xl font-bold text-black">₹299</div>
             </div>
@@ -1081,6 +1401,56 @@ return (
               {/* Decorative elements */}
               <div className="absolute -bottom-8 -left-8 w-48 h-48 bg-gradient-to-br from-amber-600/20 to-transparent rounded-full blur-3xl"></div>
               <div className="absolute -top-8 -right-8 w-48 h-48 bg-gradient-to-bl from-orange-600/20 to-transparent rounded-full blur-3xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sections */}
+      <section id="menu" className="py-16 px-4">
+        {/* Placeholder for menu preview */}
+      </section>
+
+      <section id="about" className="py-16 px-4 bg-gray-900">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold mb-6">About Our Hotel</h2>
+          <p className="text-gray-400 mb-4">
+            Welcome to our premium hotel chain, offering exceptional hospitality and comfort.
+          </p>
+          <h3 className="text-xl font-semibold mt-6 mb-3">Our Locations</h3>
+          <ul className="space-y-2 text-gray-400">
+            <li>• Babulgaon - Experience luxury in the heart of the city</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="locations" className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold mb-6">Our Locations</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="border border-gray-700 rounded-lg p-6">
+              <h3 className="text-xl font-semibold mb-2">Babulgaon</h3>
+              <p className="text-gray-400">Premium accommodation in Babulgaon</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="py-16 px-4 bg-gray-900">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold mb-6">Contact Us</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Phone</h3>
+              <p className="text-gray-400">+91 1234567890</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Email</h3>
+              <p className="text-gray-400">info@yourhotel.com</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Address</h3>
+              <p className="text-gray-400">Babulgaon, Maharashtra</p>
             </div>
           </div>
         </div>
@@ -1124,7 +1494,17 @@ return (
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-base md:text-lg font-bold text-amber-400">₹{item.price}</span>
-                    <button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold px-3 py-1.5 md:py-2 rounded-lg transition shadow-lg">
+                    <button 
+                      onClick={() => {
+                        if (!tableNumber) {
+                          alert('Please enter your table number first');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          return;
+                        }
+                        addToCart(item);
+                      }}
+                      className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold px-3 py-1.5 md:py-2 rounded-lg transition shadow-lg"
+                    >
                       Add
                     </button>
                   </div>
@@ -1135,7 +1515,7 @@ return (
 
           <div className="text-center mt-12">
             <button 
-              onClick={handleStartOrdering}
+              onClick={handleViewFullMenu}
               className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-500 hover:via-orange-500 hover:to-red-500 text-white font-bold px-8 md:px-12 py-3 md:py-4 rounded-xl transition-all text-base md:text-lg shadow-lg shadow-orange-600/30 inline-flex items-center gap-2"
             >
               View Full Menu
