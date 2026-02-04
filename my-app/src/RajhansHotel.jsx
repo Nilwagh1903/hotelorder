@@ -1538,7 +1538,7 @@ export default function RajhansHotel() {
               <div className="text-xs md:text-sm text-gray-400">Menu Items</div>
             </div>
             <div className="space-y-2">
-              <div className="text-2xl md:text-3xl font-bold text-amber-400">15min</div>
+              <div className="text-2xl md:text-3xl font-bold text-amber-400">15/20min</div>
               <div className="text-xs md:text-sm text-gray-400">Average Prep Time</div>
             </div>
             <div className="space-y-2">
@@ -1556,7 +1556,7 @@ export default function RajhansHotel() {
             <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
               RAJHANS HOTEL
             </h3>
-            <p className="text-gray-400 text-xs md:text-sm mt-2">Serving authentic flavors since 1995</p>
+            <p className="text-gray-400 text-xs md:text-sm mt-2">Serving authentic flavors </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-xs md:text-sm text-gray-400 mb-4">
             <a href="#" className="hover:text-amber-400 transition">Privacy Policy</a>
